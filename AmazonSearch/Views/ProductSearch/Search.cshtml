@@ -1,0 +1,321 @@
+﻿@model AmazonSearch.Models.ProductSearch
+
+@{
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Amazon Search</title>
+    </head>
+
+    <body>
+        <style type="text/css">
+            body {
+                background-color:#8890B9;
+            }
+            #newSearch {
+                position:absolute;
+                top:0;
+                left:0;
+                width:100%;
+                background-color: #131C4B;
+
+                height:35px;
+            }
+            #logo {
+                position:absolute;
+                color:#8890B9;
+                left:5px;
+                top:7px;
+                width:20%;
+            }
+            #searchForm {
+                position:absolute;
+                left:180px;
+                top:5px;
+                height:100%;
+            }
+
+            #searchKeywords {
+                width: 400px;
+                border:1px solid #A88D4C;
+                background-color:#7781B9;
+                color:#131C4B;
+                
+            }
+            #indexSelection {
+                width: 120px;
+                border:1px solid #A88D4C;
+                background-color:#7781B9;
+                color:#131C4B;
+            }
+
+            #searchButton {
+                width: 100px;
+                border:1px solid #A88D4C;
+                background-color:#7781B9;
+                color:#131C4B;
+            }
+
+            #searchResult {
+                position:absolute;
+                top:40px;
+                left:0;
+                width:100%;
+
+            }
+            #resultText {
+                position:absolute;
+                color: #131C4B;
+                font-family:Arial;
+                font-size:24px;
+                top:0;
+                left:5px;
+            }
+            #resultTextKeywords {
+                position:absolute;
+                color:#FFDAB2;
+                top:0;
+                left:140px;
+                font-family:Arial;
+                font-size:24px;
+            }
+            #error {
+                position:absolute;
+                color: #131C4B;
+                font-family:Arial;
+                font-size:20px;
+                top:5px;
+                left:5px;
+            }
+            #errorMessage {
+                position:absolute;
+                color:#FFDAB2;
+                top:5px;
+                left:230px;
+                font-family:Arial;
+                font-size:20px;
+            }
+
+            #currencySelection {
+                position:absolute;
+                top:35px;
+                left:5px;
+                font-family:Arial;
+                font-size:18px;
+                color: #131C4B;
+            }
+
+            #currencySelector {
+                border:1px solid #A88D4C;
+                background-color:#7781B9;
+                color:#131C4B;
+            }
+
+            #resultsDiv {
+                position:absolute;
+                top:60px;
+                width:100%;
+            }
+
+            #resulTable {
+                position:absolute;
+                width: 100%;
+                border:none;
+                
+            }
+
+            #resultTable,td {
+                border-collapse:collapse;  
+                
+            }
+            #resulTable,tr {
+                background-color:#FFDAB2;
+                border-collapse:collapse;
+                border-bottom:1px;
+                border-bottom-style:solid;
+                border-bottom-color:#17235E;
+                color:#154456;
+            }
+            #resultTable th {
+                background-color:#FFB25F;
+                border-bottom:solid;
+                border-bottom-width:4px;   
+                border-bottom-color:#17235E;
+                color:#17235E;
+    
+            }
+            #resultTableFooter {
+                background-color:#FFB25F;
+                border-top:solid;
+                border-top-width:4px;   
+                border-top-color:#17235E;
+                color:#17235E;
+            }
+
+
+            #resIndex {
+                width:2%;
+            }
+            #resTitle {
+                width:78%;
+            }
+            #resNewPrice {
+                width:10%;
+            }
+            #resUsedPrice {
+                width:10%;
+            }
+
+            a {
+                color:#896B21;
+                text-decoration:none;
+            }
+            a:hover {
+                color:#17235E;
+                text-decoration:underline;
+            }
+        </style>
+        <script type="text/javascript" src="~/js/jquery-1.8.3.min.js"></script>
+        <script type="text/javascript">
+            var lastCurrency = "@ViewBag.CurrentCurrency";
+
+            function changePrices(sel) {
+                var toCurrency = sel.options[sel.selectedIndex].label;
+                var url = "/ProductSearch/ConversionRate/" + "@ViewBag.CurrentCurrency" + "/" + toCurrency;
+                $.get(url, function (data) {
+                    $("currencies").val(lastCurrency).attr("selected", false);
+                    $("currencies").val(toCurrency).attr("selected", true);
+                    lastCurrency = toCurrency;
+
+                    // Update new prices
+                    $("div.price_new").each(function (i) {
+                        if ($.trim($(this).text()) != "Unavailable") {
+                            var id = $(this).attr("id");
+                            // Remove "new_" from id
+                            var originalValueStr = "input.base_new[name=" + id.substring(4, id.length) + "]";
+                            var price = $(originalValueStr).attr("value");
+                            var number = Number(price) * data;
+                            $(this).html(number.toFixed(2));
+                        }
+                    });
+                    // Update used prices
+                    $("div.price_used").each(function (i) {
+                        if ($.trim($(this).text()) != "Unavailable") {
+                            var id = $(this).attr("id");
+                            // Remove "used_" from id
+                            var originalValueStr = "input.base_used[name=" + id.substring(5, id.length) + "]";
+                            var price = $(originalValueStr).attr("value");
+                            var number = Number(price) * data;
+                            $(this).html(number.toFixed(2));
+                        }
+                    });
+                });
+            }
+            function UpdatePrices( data ) {
+                
+            }
+        </script>
+        <div id="newSearch">
+            <div id="logo">Amazon Product Search:</div>
+            <div id="searchForm"><form method="post">
+                <select id="indexSelection" name="searchIndex">
+                    @foreach (string value in ViewBag.SearchIndexValues)
+                    {
+                        <option value="@value">@value</option>
+                    }
+                </select>
+                <input id="searchKeywords" type="text" name="searchKeywords"/>
+                <input id="pageNr" type="hidden" name="pageNr" value="0"/>
+                <input id="searchButton" type="submit" value="Search"/>
+            </form>
+            </div>
+        </div>
+        <div id="searchResult">
+        @if (Model == null )
+        {
+            <div id="errorMessage"><b>Error during search operation</b></div>
+        }
+        else if ( @Model.ErrorOnSearch() ) {
+            <div id="error"><b>Encountered an error: </b></div><div id="errorMessage"> @Model.ErrorMessage()</div>
+        }
+        else {
+            
+            <div id="resultText">Results for:</div><div id="resultTextKeywords">@Model.SearchKeywords()</div><br />
+            <div id="currencySelection"><b>Current currency: </b><select id="currencySelector" name="currencies" onchange="changePrices(this)">
+                                        @foreach( var currency in ViewBag.Currencies ) {
+                                            if ( currency == ViewBag.CurrentCurrency ) {
+                                                <option value="@currency" selected>@currency</option>
+                                            }
+                                            else {
+                                                <option value="@currency" >@currency</option>
+                                            }
+                                        }
+                                     </select></div>
+            <div id="resultsDiv">
+                <table id="resultTable" style="width:100%">
+                    <thead>
+                        <tr>
+                            <th id="resIndex">#</th>
+                            <th id="resTitle">Title</th>
+                            <th id="resNewPrice">New Price</th>
+                            <th id="resUsedPrice">Used Price</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @for (int i = 0; i < @Model.Products().Count; ++i)
+                        {
+                            var product = Model.Products()[i];
+                            var itemNr = i + 1;
+                            string newPrice = null;
+                            if (product.LowestNewPrice != null)
+                            {
+                                newPrice = string.Format("{0:0.00}", product.LowestNewPrice);
+                                newPrice = newPrice.Replace(",", ".");
+                            }
+                            string usedPrice = null;
+                            if (product.LowestNewPrice != null)
+                            {
+                                usedPrice = string.Format("{0:0.00}", product.LowestNewPrice);
+                                usedPrice = newPrice.Replace(",", ".");
+                            }
+                            <tr>
+                                <td>@itemNr</td>
+                                <td><a href="@product.DetailPageLink">@product.Title</a></td>
+                                <td><input type="hidden" class="base_new" name="@itemNr" value="@newPrice"/>
+                                    <div class="price_new" id="@("new_" + itemNr)">@if (@newPrice == null) { @("Unavailable"); }
+                                                                                   else { @newPrice; }
+                                    </div></td>
+                                <td><input type="hidden" class="base_used" name="@itemNr" value="@usedPrice"/>
+                                    <div class="price_used" id="@("used_" + itemNr)">@if( @usedPrice == null ) {@("Unavailable");}
+                                                                                     else { @usedPrice; }
+
+                                    </div></td>
+                            </tr>
+                        }
+                    </tbody>
+                    <tfoot>
+                        <tr id="resultTableFooter">
+                            <td colspan="4">Page: 
+                                @for (int i = 0; i <= @Model.TotalPages(); ++i)
+                                            {
+                                                if ( i != ViewBag.CurrentPage ) {
+                                                    var searchStr = "/ProductSearch/Search/" + @Model.SearchIndex() + "/" + @Model.SearchKeywords() + "/" + i;
+                                                    <a href="@searchStr">@(i + 1)</a> 
+                                                }
+                                                else {
+                                                    @(i+1 + " ")
+                                                }
+                                            }
+                            </td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        }
+       </div>
+
+    </body>
+</html>
